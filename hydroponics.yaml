@@ -1,0 +1,253 @@
+esphome:
+  name: hydroponics
+  friendly_name: Hydroponics
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "wB4PsImXnVkO5Urrk2HOgMWLWiT0h7VcOFeI4URKmTY="
+
+ota:
+  password: "8db9e16e57c0ac60c8a9b94ea19f9652"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Hydroponics Fallback Hotspot"
+    password: "kD2411G88SID"
+
+captive_portal:
+
+number:
+  - platform: template
+    name: "Volume of water in system"
+    id: "water_volume"
+    optimistic: true
+    step: 1
+    min_value: 1
+    max_value: 1000
+    restore_value: yes
+    mode: box
+
+  - platform: template
+    name: "Mininal PPM Value"
+    id: "Min_PPM"
+    optimistic: true
+    step: 10
+    min_value: 0
+    max_value: 1500
+    restore_value: yes
+    mode: box
+    on_value:
+      - lambda: !lambda |-
+          if(id(Max_PPM).state < id(Min_PPM).state){
+            id(Min_PPM).publish_state(id(Max_PPM).state);
+          }
+          return;
+
+  - platform: template
+    name: "Maximal PPM Value"
+    id: "Max_PPM"
+    optimistic: true
+    step: 10
+    min_value: 0
+    max_value: 1500
+    restore_value: yes
+    mode: box
+    on_value:
+      - lambda: !lambda |-
+          if(id(Max_PPM).state < id(Min_PPM).state){
+            id(Max_PPM).publish_state(id(Min_PPM).state);
+          }
+          return;
+
+  - platform: template
+    name: "Volume of nutrition solution batch size [ml]"
+    id: "volume_of_nutrition"
+    optimistic: true
+    step: 5
+    min_value: 0
+    max_value: 50
+    restore_value: yes
+    mode: box
+
+  - platform: template
+    name: "Goal PH Value"
+    id: "Goal_PH"
+    optimistic: true
+    step: 0.1
+    min_value: 0
+    max_value: 14
+    restore_value: yes
+    mode: slider
+  
+
+interval:
+  - interval: 1 min   # getting sensor values   
+    then:
+      - component.update: source_sensor
+      - component.update: TDS
+      - switch.turn_off: tds_vcc
+      - switch.turn_off: tds_gnd
+      - component.update: PH
+      - switch.turn_on: tds_gnd
+      - switch.turn_on: tds_vcc
+
+  - interval: 30 min # minimum - 15 min     
+    then:
+      #automatization
+      - if:
+          condition: # ppm first
+            lambda: |-
+              return id(TDS).state < id(Min_PPM).state;
+          then:
+            - switch.turn_on: relay1
+            - delay: !lambda |- 
+                float ml_to_pump = id(volume_of_nutrition).state;
+                int time_for_pumping = ml_to_pump * 60000 / 80; 
+                ESP_LOGI("automatization - PPM - nutrition solution", "ml_to_pump: %f, time_for_pumping: %d", ml_to_pump, time_for_pumping);
+                return time_for_pumping;
+            - switch.turn_off: relay1
+          else: # PH
+            - if:
+                condition: # ppm first
+                  lambda: |-
+                    return id(PH).state < (id(Goal_PH).state - 0.5); 
+                then: # add basic solution
+                  - switch.turn_on: relay2
+                  - delay: !lambda |- 
+                      float ml_to_pump = id(water_volume).state * 1000 / 3785.41;
+                      int time_for_pumping = ml_to_pump * 60000 / 80; 
+                      ESP_LOGI("automatization - PH - basic solution", "ml_to_pump: %f, time_for_pumping: %d", ml_to_pump, time_for_pumping);
+                      return time_for_pumping;
+                  - switch.turn_off: relay2
+
+                else: 
+                  - if: 
+                      condition: # ppm first
+                        lambda: |-
+                          return id(PH).state > (id(Goal_PH).state + 0.5); 
+                      then:   # add acidic solution
+                        - switch.turn_on: relay3
+                        - delay: !lambda |- 
+                            float ml_to_pump = id(water_volume).state * 1000 / 3785.41;
+                            int time_for_pumping = ml_to_pump * 60000 / 80; 
+                            ESP_LOGI("automatization - PH - acidic solution", "ml_to_pump: %f, time_for_pumping: %d", ml_to_pump, time_for_pumping);
+                            return time_for_pumping;
+                        - switch.turn_off: relay3
+
+
+switch:
+  - platform: gpio
+    pin: 
+      number: 13        
+      inverted: true        
+    id: tds_vcc
+
+  - platform: gpio
+    pin: 
+      number: 12        
+    id: tds_gnd
+
+  # RELE MODUL
+  - platform: gpio #Nutrition solution
+    pin:
+      number: 4
+      inverted: true
+    name: "Rele 1"
+    id: "relay1"
+  - platform: gpio #Basic solution
+    pin:
+      number: 2
+      inverted: true
+    name: "Rele 2"
+    id: "relay2"
+  - platform: gpio #Acidic solution
+    pin:
+      number: 15
+      inverted: true
+    name: "Rele 3"
+    id: "relay3"
+  - platform: gpio #Main Pump
+    pin:
+      number: 0
+      inverted: true
+    name: "Rele 4" 
+    id: "relay4"
+
+sensor:
+  # TDS
+  - platform: adc
+    attenuation: auto
+    pin: 32              
+    name: "TDS"
+    id: TDS
+    unit_of_measurement: "ppm"
+    filters:
+      - offset:  -0.09
+      - median:
+          window_size: 7
+          send_every: 5
+          send_first_at: 4
+      - lambda: !lambda |- 
+          float t_compenzation = 1.0 + 0.02 * (id(temperature).state - 25.0);
+          float compensationVoltage = x / t_compenzation;
+          return (133.42 * compensationVoltage * compensationVoltage * compensationVoltage - 255.86 * compensationVoltage * compensationVoltage + 857.39 * compensationVoltage) * 0.5;
+    update_interval: never
+  
+  # PH 
+  - platform: adc 
+    attenuation: auto
+    pin: 34             
+    name: "PH"
+    id: PH
+    unit_of_measurement: "PH"
+    filters:
+      - offset:  -0.042
+      - median:
+          window_size: 7
+          send_every: 5
+          send_first_at: 4
+      - lambda: return -5.70 * 2 * x + 26.3;
+    update_interval: never
+    
+  # temperature - NTC Thermistor 
+  - platform: ntc
+    sensor: resistance_sensor
+    name: NTC Temperature
+    id: temperature
+    calibration:
+      b_constant: 3950
+      reference_temperature: 25°C
+      reference_resistance: 10kOhm
+    filters:
+      - median:
+          window_size: 7
+          send_every: 5
+          send_first_at: 4
+  - platform: resistance
+    id: resistance_sensor
+    sensor: source_sensor
+    configuration: DOWNSTREAM
+    resistor: 0.997kOhm
+    reference_voltage:  3.2V
+    name: Resistance Sensor
+  - platform: adc
+    attenuation: auto
+    id: source_sensor
+    pin: 33
+    update_interval: never
+    filters:
+       -  offset:  -0.042
+
