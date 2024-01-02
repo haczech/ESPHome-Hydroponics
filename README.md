@@ -2,7 +2,13 @@
 This project was made as a semestral project to the subject: Distributed systems<br />
 Faculty: Information technology<br />
 Institution: Brno University of Technology<br />
-<br />
+Team:
+- xbedna72
+- xtomec09
+- xhakto01
+
+[Github repository](https://github.com/haczech/ESPHome-Hydroponics)
+
 Hydroponics presents a fascinating approach to cultivating flowering organisms without the use of soil. Flowers, vegetables, and fruits can derive their nutrition and essential environment from preprocessed water. By incorporating specific components, we have developed an automated system capable of monitoring and regulating both nutrients and pH levels, ensuring optimal conditions for the cultivated plants.<br />
 <br />
 ## Design of automated Hydroponics system
