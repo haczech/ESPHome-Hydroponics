@@ -15,7 +15,8 @@ A vital essence for the plant's growth is the proper nutrition which is mediated
 The adjustments of concentration of the nutrient solution precede the pH measurements. It also takes some time to let the solution mix up properly and so the adjustments are repeated several times before the system can proceed with measuring pH. pH is then measured using a special pH sensor module ([3]) and with the same approach as in the case of TDS, the pH of the nutrient solution is adjusted by pumping either basic (< pH_min) or acidic (> pH_max) solution into it. The optimal range of pH for the majority of plants is between 5.5 and 6.5 which is mostly neutral. Note that in order to use the pH sensor module, it needs to be calibrated first using a solution with known pH (see source [2]).<br />
 <br />
 
-![automated](pdi_diagram_automatizace.png)
+![automated](automatization_scheme.png)
+This scheme shows our high level view on the whole Hydroponics workflow, as was described from multiple sources ([3][4][5][6][8]).
 
 **Important**: Having the TDS meter and the pH meter functioning both at the same time in the same vessel with the nutrient solution, the pH measurements were greatly disturbed by those of TDS. This could lead to bad pH management and ruining of the plant's health. The solution to this problem is having the power conductors of the TDS meter isolated and inactive when reading the pH sensor value. This is done by placing two protective transistors between the TDS meter and the Vcc/GND pins of ESP32.<br />
 <br />
