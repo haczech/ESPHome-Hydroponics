@@ -27,7 +27,7 @@ The configuration of the system is done via the 'hydroponics.yaml' file inside E
 
 ## Sensors connections summary
 
-Our implementation uses the following sensors and actuators:
+Our implementation uses ESP32 and the following sensors and actuators:
 - TDS sensor
 - PH sensor
 - NTC thermistor
@@ -60,6 +60,12 @@ Pumps that are pumping these solutions are connected to these relays:
 |           Nutrition | 1         |
 |                Base | 2         |
 |              Acidic | 3         |
+
+## Home assistant dashboard
+
+The ESPHome-Hydroponics will be shown in home assistant dashboard as follows
+
+![HA Dashboard](HA_dashboard_view.png)
 
 ## Components:
 [1]: NTC thermistor: https://www.aliexpress.com/item/1005005093540618.html<br />
