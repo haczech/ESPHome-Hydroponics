@@ -46,6 +46,16 @@ This sensor was calibrated with destilled water. We assume that the destilled wa
 
 This sensor was calibrated bz mesuring the actual voltage on the 3V3 pin of the ESP32 - in our case it was 3.2V. Also we measured the actual resistance of the pullup resistor - in our case 0.997kOhm. These values can be modified in the [hydroponics.yaml](hydroponics.yaml) on lines **243** and **244**.
 
+## Pump connections
+
+Pumps that are pumping these solutions are connected to these relays:
+
+| **Pumped solution** | **Relay** |
+|--------------------:|-----------|
+|           Nutrition | 1         |
+|                Base | 2         |
+|              Acidic | 3         |
+
 ## Components:
 [1]: NTC thermistor: https://www.aliexpress.com/item/1005005093540618.html<br />
 [2]: TDS sensor module: https://www.aliexpress.com/item/1005003539753304.html<br />

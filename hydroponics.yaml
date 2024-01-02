@@ -167,7 +167,7 @@ switch:
       inverted: true
     name: "Rele 1"
     id: "relay1"
-  - platform: gpio #Basic solution
+  - platform: gpio #Base solution
     pin:
       number: 2
       inverted: true
@@ -179,7 +179,7 @@ switch:
       inverted: true
     name: "Rele 3"
     id: "relay3"
-  - platform: gpio #Main Pump
+  - platform: gpio
     pin:
       number: 0
       inverted: true
